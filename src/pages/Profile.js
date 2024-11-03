@@ -1,6 +1,7 @@
 import ConfirmMessage from "../components/ConfirmMessage"
 import DropDownMenu from "../components/DropDownMenu";
-
+import { useAuthContext } from "../hooks/useAuthContext";
+import { useLogout } from "../hooks/useLogout";
 //images
 import mainImg from "../images/Rectangle 30.png"
 import effect from "../images/Rectangle 31.png"
@@ -8,20 +9,27 @@ import profileAvatar from "../images/Ellipse 10.png"
 import grassImg from "../images/pale-85 1.png"
 import logoutImg from "../images/Vector.png"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-const Profile = ({isUserLoggedIn,setIsUserLoggedIn, isDropDownMenu}) => {
+const Profile = ({isDropDownMenu}) => {
+    const { user } = useAuthContext();
+    const {logout, isLoading, error, setError, success, setSuccess, invalid} = useLogout()
+
     const [isConfirmLoggingOut,setIsConfirmLoggingOut] = useState(false)
 
     const handleLogoutButton = () => {
         setIsConfirmLoggingOut(true)
     }
-    const handleLogout = () => {
-        setIsUserLoggedIn(false);
+    const handleLogout = async () => {
+        await logout()
     };
     const handleDismiss = () => {
         setIsConfirmLoggingOut(false)
     }
+
+    useEffect(() => {
+        console.log(user);
+    })
 
     return (
         <>
@@ -59,21 +67,29 @@ const Profile = ({isUserLoggedIn,setIsUserLoggedIn, isDropDownMenu}) => {
                         <div className="text-#EEF9F3">
                             <p className="m-8">JAMES WILLIAMS</p>
                             <p className="m-8">USA - WASHINGTON, D.C.</p>
-                            <p className="m-8">JAMES96@GMAIL.COM</p>
+                            <p className="m-8">{ user.email }</p>
                             <p className="m-8">+1 202 555 1234</p>
                         </div>
                     </div>
                 </div>
                 {/* logout button */}
                 <div className="relative">
-                <div className="absolute right-[20px] bottom-[20px]">
+                {!isLoading && <div className="absolute right-[20px] bottom-[20px]">
                     <div onClick={handleLogoutButton}
                         className="bg-#E55B5B text-#EEF9F3 border-2 rounded-[10px] flex justify-around items-center p-1 w-[100px] 
                                     2xl:w-[200px] 2xl:h-[55px] cursor-pointer ">
                         <img src={logoutImg} alt="logout image" className="2xl:w-[40px] 2xl:h-[36px]" />
                         <button>LOGOUT</button>
                     </div>
-                </div>
+                </div>}
+                {isLoading && <div className="absolute right-[20px] bottom-[20px]">
+                    <div onClick={handleLogoutButton}
+                        className="bg-#E55B5B text-#EEF9F3 border-2 rounded-[10px] flex justify-around items-center p-1 w-[100px] 
+                                    2xl:w-[200px] 2xl:h-[55px] cursor-pointer ">
+                        <img src={logoutImg} alt="logout image" className="2xl:w-[40px] 2xl:h-[36px]" />
+                        <button disabled>LOADING...</button>
+                    </div>
+                </div>}
                 </div>
             </div>
             {/* grass image */}

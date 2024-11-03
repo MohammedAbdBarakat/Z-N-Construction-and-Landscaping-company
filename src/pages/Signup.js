@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { useSignup } from "../hooks/useSignUp";
 import ErrorMessage from '../components/ErrorMessage';
+import InvalidFields from "../components/InvalidFields";
+import SuccessMessage from "../components/SuccessMessage";
 
 //images:
 import avatarImg from "../images/clarity_user-line.png"
@@ -13,24 +16,67 @@ import usernameImg from "../images/clarity_user-line1.png"
 import passImg from "../images/carbon_password.png"
 import plusImg from "../images/plusicon.png"
 import droplistIcon from "../images/ep_arrow-down.png"
-import invalidImg from "../images/Vector1.png"
+import homeResources from "../Resources/homeResources";
 
 const Signup = () => {
     const [email, setEmail] = useState("")
     const [phoneNumber,SetPhoneNumber] = useState("")
-    const [userName,SetUserName] = useState("")
+    const [fullName,SetFullName] = useState("")
     const [password, setPassword] = useState("")
     const [re_password, setRe_Password] = useState("")
+    const [address, setAddress] = useState("")
     const [country, setCountry] = useState("")
     const [city, setCity] = useState("")
+    const [profileAvatar, setProfileAvatar] = useState("")
+
+    const userData = {
+        email,
+        phoneNumber,
+        password,
+        address,
+        country,
+        city,
+        profileAvatar
+    }
 
 
-    const [isError, setIsError] = useState(true);
-    const [isInvalid, setIsInvalid] = useState(false);
+    const {signup, error, setError, success, setSuccess, isLoading, invalid} = useSignup()
+    const navigate = useNavigate()
+
 
     const handleDismiss = () => {
-        setIsError(false);
+        setError(null)
+        setSuccess(null);
     };
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileAvatar(URL.createObjectURL(file))
+        }
+    }
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+    
+        // Ensure password and re_password match
+        if (password !== re_password) {
+            console.log("Passwords do not match.");
+            return;
+        }
+    
+        await signup(userData);
+    };
+    
+
+    //redirect user to verify-account page and passing user email
+    useEffect(() => {
+        if (success) {
+            setTimeout(() => {
+                navigate("/verify-email", {state: {email: userData.email}})
+            }, 2000);
+        }
+    }, [success])
 
     return ( 
         <>
@@ -55,14 +101,27 @@ const Signup = () => {
             <div className="bg-#EEF9F3 flex flex-col justify-center items-center w-full">
                 <p className="font-[700] sm:text-3xl md:text-4xl lg:text-4xl xl:text-4xl 2xl:text-6xl m-8">SIGN UP</p>
                 <p className="font-[700] sm:text-1xl md:text-2xl lg:text-2xl xl:text-2xl 2xl:text-3xl">PROFILE PICTURE</p>
-                {/* avatar div */}
+                {/* Avatar div */}
                 <div className="relative inline-block rounded-full bg-#D9D9D980 bg-opacity-50 mt-4 mb-8">
-                    <img src={avatarImg} className="w-[112px] h-[112px] xl:w-[100px] xl:h-[100px] m-8" />
-                    <button className="absolute right-[12px] bottom-[18px] cursor-pointer ">
-                        <img src={plusImg} className="w-[28px] h-[28px]" />
-                    </button>
+                    {profileAvatar && (
+                        <img src={profileAvatar} className="w-[112px] h-[112px] xl:w-[100px] xl:h-[100px] m-8" />
+                        )}
+                    {!profileAvatar && (
+                        <img src={avatarImg} className="w-[112px] h-[112px] xl:w-[100px] xl:h-[100px] m-8" />
+                        )}
+                    
+                    {/* File Input */}
+                    <div className="absolute right-[12px] bottom-[18px] cursor-pointer">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="opacity-0 absolute inset-0 cursor-pointer w-[28px] h-[28px]"
+                            onChange={handleAvatarChange}
+                        />
+                        <img src={plusImg} className="w-[28px] h-[28px] pointer-events-none" alt="Add Profile Picture" />
+                    </div>
                 </div>
-                <form>
+                <form onSubmit={handleRegister}>
                     <label htmlFor="email" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">EMAIL ADDRESS:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] m-16 border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
                         <img src={emailImg} alt="email" className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
@@ -71,7 +130,7 @@ const Signup = () => {
                             placeholder="EXAMPLE@GMAIL.COM"
                             onChange={(e) => {setEmail(e.target.value)}}
                             value={email}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
                     <label htmlFor="phone-number" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">PHONE NUMBER:</label>
@@ -79,43 +138,54 @@ const Signup = () => {
                         <img src={phoneImg} className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
                         <input 
                             type="text" 
-                            placeholder="........."
+                            placeholder="0999999999"
                             onChange={(e) => {SetPhoneNumber(e.target.value)}}
                             value={phoneNumber}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
-                    <label htmlFor="username" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">USER NAME:</label>
+                    <label htmlFor="fullName" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">FULL NAME:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] m-16 border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
                         <img src={usernameImg} className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
                         <input 
                             type="text" 
-                            placeholder="@USER_NAME"
-                            onChange={(e) => {SetUserName(e.target.value)}}
-                            value={userName}
-                            className="bg-transparent"
+                            placeholder="FULL NAME"
+                            onChange={(e) => {SetFullName(e.target.value)}}
+                            value={fullName}
+                            className="bg-transparent w-full"
+                        />
+                    </div>
+                    <label htmlFor="address" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">ADDRESS:</label>
+                    <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] m-16 border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
+                        <img src={homeResources.locationIcon} className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
+                        <input 
+                            type="text" 
+                            placeholder="ADDRESS"
+                            onChange={(e) => {setAddress(e.target.value)}}
+                            value={address}
+                            className="bg-transparent w-full"
                         />
                     </div>
                     <label htmlFor="password" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">PASSWORD:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] m-16 border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
                         <img src={passImg} className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
                         <input 
-                            type="text" 
-                            placeholder="............"
+                            type="password" 
+                            placeholder="*********"
                             onChange={(e) => {setPassword(e.target.value)}}
                             value={password}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
                     <label htmlFor="re-enter-password" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl m-16">RE-ENTER PASSWORD:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] m-16 border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
                         <img src={passImg} className="xl:w-[26px] xl:h-[26px] mr-4 ml-2" />
                         <input 
-                            type="text" 
-                            placeholder="............"
+                            type="password" 
+                            placeholder="*********"
                             onChange={(e) => {setRe_Password(e.target.value)}}
                             value={re_password}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
                     <div className="flex flex-row w-[487px] justify-between  mr-16 ml-16">
@@ -127,7 +197,7 @@ const Signup = () => {
                                     <option value=""></option>
                                     <option value="Syria">Syria</option>
                                     <option value="UAE">UAE</option>
-                                    <option value="KSA">UAE</option>
+                                    <option value="KSA">KSA</option>
                                 </select>
                                 <img src={droplistIcon} className="xl:w-[17px] xl:h-[17px] mr-4" />
                             </div>
@@ -147,12 +217,10 @@ const Signup = () => {
                         </div>
                     </div>
                     <div className="flex justify-center ">
-                        <button className="bg-#2BE784 mt-8 text-[20px] font-[500] border-2 rounded-[10px] border-black p-4 xl:p-2 xl:w-[204px] xl:h-[49px]">CREATE ACCOUNT</button>
+                        {isLoading && <button disabled className="bg-green-400 mt-8 text-[20px] font-[500] border-2 rounded-[10px] border-black p-4 xl:p-2 xl:w-[204px] xl:h-[49px]">LOADING...</button>}
+                        {!isLoading && <button className="bg-#2BE784 mt-8 text-[20px] font-[500] border-2 rounded-[10px] border-black p-4 xl:p-2 xl:w-[204px] xl:h-[49px]">CREATE ACCOUNT</button>}
                     </div>
-                    {isInvalid && <div className='bg-#EEF9F3 border-2 rounded-[5px] xl:w-[478px] xl:mx-16 xl:my-6 p-4 m-4 text-#D8814F border-#D8814F flex justify-center'>
-                        <img src={invalidImg} className='mx-2' />
-                        <p className='font-[500]'>INVALID FIELDS, TRY AGAIN</p>
-                    </div>}
+                    {invalid && <InvalidFields invalidMessage={invalid} />}
                     <div className="flex flex-col items-center">
                         <p className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl mt-8 mb-2">HAVE AN ACCOUNT?
                             <Link to={"/login"} className="text-#0E7E83 ml-2">LOGIN</Link>
@@ -161,7 +229,9 @@ const Signup = () => {
                 </form>
             </div>
         </div>
-        {isError && <ErrorMessage handleDismiss={handleDismiss} />}
+        {success && <SuccessMessage handleDismiss={handleDismiss} successMessage = {success} />}
+
+        {error && <ErrorMessage handleDismiss={handleDismiss} errorMessage={error} />}
         </>
     );
 }

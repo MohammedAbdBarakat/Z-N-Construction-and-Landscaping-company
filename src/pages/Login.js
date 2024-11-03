@@ -1,40 +1,60 @@
-import{ useState } from 'react';
+import{ useEffect, useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-
+import { useLogin } from '../hooks/useLogin';
+import { useForgetPassword } from '../hooks/useForgetPassword';
 
 import ErrorMessage from '../components/ErrorMessage';
+import SuccessMessage from '../components/SuccessMessage';
+import InvalidFields from "../components/InvalidFields";
 
 //images:
 import logoImg from "../images/logo.png"
 import mainImg from "../images/Rectangle 11.png"
 import emailImg from "../images/ic_outline-email.png"
 import passImg from "../images/carbon_password.png"
-import invalidImg from "../images/Vector1.png"
 
-const Login = ({setIsUserLoggedIn}) => {
-    const [email, setEmail] = useState("admin")
-    const [password, setPassword] = useState("admin")
 
-    const [isError, setIsError] = useState(false);
-    const [isInvalid, setIsInvalid] = useState(false);
+const Login = () => {
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+
+    const { login, error, setError, success, setSuccess, isLoading, invalid } = useLogin()
+    const { forgetPassword, isLoadingF, errorF, setErrorF, successF, setSuccessF } = useForgetPassword()
+
+    const userData = {
+        email,
+        password
+    }
 
     const navigate = useNavigate()
 
+    //handle change password.
+    const [isForgetPassword, setIsForgetPassword] = useState(false)
+    const handleChangePassword = async () => {
+        await forgetPassword(userData)
+    }
+    useEffect(() => {
+        if (successF) {
+            setTimeout(() => {
+                navigate("/verify-password", {state: {email: userData.email}})
+            }, 2000);
+        }
+    }, [successF])
+
+
     const handleDismiss = () => {
-        setIsError(false);
+        setError(null);
+        setSuccess(null)
+        setErrorF(null);
+        setSuccessF(null)
     };
 
-    const handleLogin = (e) => {
-        console.log(email, "  ", password);
-        
-        e.preventDefault();
-        if (email === "admin" && password ==="admin") {
-            setIsUserLoggedIn(true)
-            navigate("/profile")
-        } else {
-            setIsInvalid(true); 
-        }
+    const handleLogin = async (e) => {
+        e.preventDefault()
+        await login (userData)
     }
+
+
     return (
         <>
         {/* nav   */}
@@ -46,43 +66,49 @@ const Login = ({setIsUserLoggedIn}) => {
                 <p className="font-[700] sm:text-1xl md:text-2xl lg:text-2xl xl:text-2xl 2xl:text-3xl">REINVENT YOUR SPACE WITH US</p>
                 {/* logo */}
                 <img src={logoImg} alt="logo" className="w-24 h-20 m-5" />
+                {/* form */}
                 <form onSubmit={handleLogin}>
                     <label htmlFor="email" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl">EMAIL ADDRESS:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] border-2 rounded-[10px] border-black shadow-md shadow-slate-500 my-4">
                         <img src={emailImg} alt="email" className="2xl:w-[26px] 2xl:h-[26px] mr-4 ml-2" />
-                        <input 
+                        <input
+                            required
                             type="text" 
                             placeholder="EXAMPLE@GMAIL.COM"
                             onChange={(e) => {setEmail(e.target.value)}}
                             value={email}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
                     <label htmlFor="password" className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl">PASSWORD:</label>
                     <div className="flex items-center bg-#D9D9D980 2xl:w-[478px] 2xl:h-[36px] border-2 rounded-[10px] border-black shadow-md shadow-slate-500 mt-4">
                         <img src={passImg} alt="password" className="2xl:w-[26px] 2xl:h-[26px] mr-4 ml-2" />
-                        <input 
-                            type="text" 
+                        <input
+                            required
+                            type="password" 
                             placeholder="YOUR PASSWORD" 
                             onChange={(e) => {setPassword(e.target.value)}}
                             value={password}
-                            className="bg-transparent"
+                            className="bg-transparent w-full"
                         />
                     </div>
-                    {isInvalid && <div className='bg-#EEF9F3 border-2 rounded-[5px] p-4 m-4 text-#D8814F border-#D8814F flex'>
-                        <img src={invalidImg} className='mx-2' />
-                        <p className='font-[500]'>YOUR EMAIL OR PASSWORD IS INVALID</p>
-                    </div>}
+                    {invalid && <InvalidFields invalidMessage={invalid} /> }
                     <div className="flex flex-col items-center">
                         <p className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl mt-8 mb-2">DON'T HAVE AN ACCOUNT?
                             <Link to={"/signup"}  className="text-#0E7E83 ml-2">SIGN UP</Link>
                         </p>
-                        <p className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl mb-2">FORGET PASSWORD?
-                            <Link to="/change-password" className="text-#0E7E83 ml-2">CHANGE PASSWORD</Link>
-                        </p>
-                        <div className="flex justify-center ">
+                        {!isLoadingF && <p className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl mb-2">FORGET PASSWORD?
+                            <button type='button' onClick={handleChangePassword} className="text-#0E7E83 ml-2">CHANGE PASSWORD</button>
+                        </p>}
+                        {isLoadingF && <p className="font-[500] sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-xl mb-2">FORGET PASSWORD?
+                            <button disabled type='button' onClick={handleChangePassword} className="text-#0E7E83 ml-2">LOADING...</button>
+                        </p>}
+                        {!isLoading && <div className="flex justify-center ">
                             <button className="bg-#2BE784 mt-8 text-[20px] font-[500] border-2 rounded-[10px] border-black p-4 2xl:p-2 2xl:w-[204px] 2xl:h-[49px]">LOGIN</button>
-                        </div>
+                        </div>}
+                        {isLoading && <div className="flex justify-center ">
+                            <button disabled className="bg-green-400 mt-8 text-[20px] font-[500] border-2 rounded-[10px] border-black p-4 2xl:p-2 2xl:w-[204px] 2xl:h-[49px]">LOADING...</button>
+                        </div>}
                     </div>
                 </form>
             </div>
@@ -91,7 +117,12 @@ const Login = ({setIsUserLoggedIn}) => {
                 <img src={mainImg} className="2xl:h-full" />
             </div>
         </div>
-        {isError && <ErrorMessage handleDismiss={handleDismiss} />}
+        {/* login success and errors messages */}
+        {success && <SuccessMessage handleDismiss={handleDismiss} successMessage = {success} />}
+        {error && <ErrorMessage handleDismiss={handleDismiss} errorMessage={error} />}
+        {/* forget password success and errors messages */}
+        {successF && <SuccessMessage handleDismiss={handleDismiss} successMessage = {successF} />}
+        {errorF && <ErrorMessage handleDismiss={handleDismiss} errorMessage={errorF} />}
         </>
     );
 }
